@@ -412,6 +412,12 @@ body.sidebar-collapsed .main { margin-left: 0; }
 .repeat-toggle { display: flex; align-items: center; gap: 8px; font-size: 14px; }
 
 /* Detail view */
+.detail-heading { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
+.detail-heading .check { margin-top: 4px; }
+.detail-heading .detail-title { margin: 0; flex: 1; }
+.detail-heading.done .check { background: var(--text-secondary); border-color: var(--text-secondary); }
+.detail-heading.done .check svg { opacity: 1; }
+.detail-heading.done .detail-title { text-decoration: line-through; color: var(--text-secondary); }
 .detail-title { font-size: 20px; font-weight: 500; margin: 4px 0 16px; word-break: break-word; }
 .detail-row { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
 .detail-row .label { width: 96px; flex: none; color: var(--text-secondary); font-size: 13px; }

@@ -423,7 +423,10 @@
     detailTask = task;
     const body = $('detailBody');
     const rows = [];
-    rows.push('<div class="detail-title"></div>');
+    rows.push('<div class="detail-heading' + (task.completed ? ' done' : '') + '">' +
+      '<button id="detailCheck" class="check" title="' +
+      (task.completed ? 'Mark not done' : 'Mark done') + '">' + SVG.check + '</button>' +
+      '<div class="detail-title"></div></div>');
 
     rows.push(row('Flag',
       '<button id="detailFlagBtn" class="flag-toggle" data-flagged="' + (task.flagged ? 'true' : 'false') + '">' +
@@ -443,6 +446,8 @@
 
     body.innerHTML = rows.join('');
     body.querySelector('.detail-title').textContent = task.summary || '(No title)';
+    const dc = $('detailCheck');
+    if (dc) dc.addEventListener('click', () => { toggleComplete(task); openDetail(task); });
     const fb = $('detailFlagBtn');
     if (fb) fb.addEventListener('click', () => { toggleFlag(task); openDetail(task); });
     show('detailModal');
