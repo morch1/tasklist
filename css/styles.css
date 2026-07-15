@@ -198,6 +198,16 @@ body.sidebar-collapsed .main { margin-left: 0; }
 }
 .task-item.done .task-title { text-decoration: line-through; color: var(--text-secondary); }
 
+.task-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin-top: 2px;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+.task-item.done .task-desc { text-decoration: line-through; }
+
 .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
 .badge {
   display: inline-flex; align-items: center; gap: 4px;

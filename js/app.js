@@ -216,6 +216,13 @@
     title.textContent = task.summary || '(No title)';
     main.appendChild(title);
 
+    if (task.description) {
+      const desc = document.createElement('div');
+      desc.className = 'task-desc';
+      desc.textContent = task.description;
+      main.appendChild(desc);
+    }
+
     const badges = document.createElement('div');
     badges.className = 'badges';
     if (task.due) {
