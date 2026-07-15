@@ -146,10 +146,16 @@
           </button>
         </div>
 
-        <label class="field">
+        <div class="field">
           <span>Due date</span>
           <input id="fDue" type="date" />
-        </label>
+          <div class="due-time-row">
+            <label class="due-allday">
+              <input id="fAllDay" type="checkbox" checked /> All day
+            </label>
+            <input id="fDueTime" type="time" class="hidden" />
+          </div>
+        </div>
 
         <div class="field">
           <span>Repeat</span>

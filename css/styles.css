@@ -383,6 +383,11 @@ body.sidebar-collapsed .main { margin-left: 0; }
 }
 .flag-toggle[data-flagged="true"] .flag { color: var(--flag); opacity: 1; }
 
+/* Due date time */
+.due-time-row { display: flex; align-items: center; gap: 16px; margin-top: 10px; flex-wrap: wrap; }
+.due-allday { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text); }
+.due-time-row input[type="time"] { width: auto !important; }
+
 /* Repeat */
 .repeat-details { margin-top: 8px; padding-left: 4px; border-left: 2px solid var(--border); padding: 8px 0 4px 12px; }
 .repeat-line { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }

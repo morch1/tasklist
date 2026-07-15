@@ -421,14 +421,14 @@
     if (task) {
       $('fTitle').value = task.summary || '';
       setFormFlag(task.flagged);
-      $('fDue').value = task.due ? toDateInput(task.due) : '';
+      loadDueForm(task);
       $('fDesc').value = task.description || '';
       sel.value = task._collectionURL;
       loadRepeatForm(task.rrule);
     } else {
       $('fTitle').value = '';
       setFormFlag(false);
-      $('fDue').value = '';
+      loadDueForm(null);
       $('fDesc').value = '';
       sel.value = state.lastUsedCollection ||
         (state.currentList !== ALL ? state.currentList : (state.collections[0] && state.collections[0].url));
@@ -488,7 +488,16 @@
     if (!colURL) { showFormError('Please choose a task list.'); return; }
 
     const dueVal = $('fDue').value;
-    const due = dueVal ? fromDateInput(dueVal) : null;
+    let due = null, dueDateOnly = true;
+    if (dueVal) {
+      if ($('fAllDay').checked) {
+        due = fromDateInput(dueVal);
+        dueDateOnly = true;
+      } else {
+        due = fromDateTimeInput(dueVal, $('fDueTime').value);
+        dueDateOnly = false;
+      }
+    }
     const rrule = buildRRuleFromForm();
 
     let task = editingTask;
@@ -507,7 +516,7 @@
     task.flagged = formFlagged;
     task.priorityInt = formFlagged ? (task.priorityInt > 0 ? task.priorityInt : 1) : 0;
     task.due = due;
-    task.dueDateOnly = !!due;
+    task.dueDateOnly = due ? dueDateOnly : false;
     task.description = $('fDesc').value.trim();
     task.rrule = rrule;
 
@@ -569,9 +578,43 @@
     const y = date.getFullYear(), m = date.getMonth() + 1, d = date.getDate();
     return y + '-' + (m < 10 ? '0' + m : m) + '-' + (d < 10 ? '0' + d : d);
   }
+  function toTimeInput(date) {
+    const h = date.getHours(), mi = date.getMinutes();
+    return (h < 10 ? '0' + h : h) + ':' + (mi < 10 ? '0' + mi : mi);
+  }
   function fromDateInput(val) {
     const [y, m, d] = val.split('-').map(Number);
     return new Date(y, m - 1, d);
+  }
+  function fromDateTimeInput(dateVal, timeVal) {
+    const [y, m, d] = dateVal.split('-').map(Number);
+    const [h, mi] = (timeVal || '00:00').split(':').map(Number);
+    return new Date(y, m - 1, d, h || 0, mi || 0);
+  }
+
+  // Populate the due-date/time controls from a task.
+  function loadDueForm(task) {
+    if (task && task.due) {
+      $('fDue').value = toDateInput(task.due);
+      if (task.dueDateOnly) {
+        $('fAllDay').checked = true;
+        $('fDueTime').value = '';
+      } else {
+        $('fAllDay').checked = false;
+        $('fDueTime').value = toTimeInput(task.due);
+      }
+    } else {
+      $('fDue').value = '';
+      $('fAllDay').checked = true;
+      $('fDueTime').value = '';
+    }
+    syncDueTimeVisibility();
+  }
+  function syncDueTimeVisibility() {
+    const allDay = $('fAllDay').checked;
+    $('fDueTime').classList.toggle('hidden', allDay);
+    // When switching to a specific time with none set, default to 09:00.
+    if (!allDay && !$('fDueTime').value) $('fDueTime').value = '09:00';
   }
 
   // ---- Data loading & sync --------------------------------------------
@@ -823,6 +866,7 @@
     // Form
     $('saveTaskBtn').addEventListener('click', saveForm);
     $('fFlag').addEventListener('click', () => setFormFlag(!formFlagged));
+    $('fAllDay').addEventListener('change', syncDueTimeVisibility);
     $('fRepeatOn').addEventListener('change', () => {
       $('repeatDetails').classList.toggle('hidden', !$('fRepeatOn').checked);
     });
