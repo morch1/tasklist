@@ -203,7 +203,6 @@ body.sidebar-collapsed .main { margin-left: 0; }
 }
 .badge svg { width: 14px; height: 14px; }
 .badge.overdue { color: var(--overdue); background: #fce8e6; }
-.badge.list-tag { background: #e8f0fe; color: var(--primary); }
 
 .pri-indicator {
   flex: none;

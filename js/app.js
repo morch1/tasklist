@@ -218,13 +218,6 @@
       b.querySelector('span').textContent = rep;
       badges.appendChild(b);
     }
-    // In "All Tasks", show which list a task belongs to.
-    if (state.currentList === ALL && task._collectionName) {
-      const b = document.createElement('span');
-      b.className = 'badge list-tag';
-      b.textContent = task._collectionName;
-      badges.appendChild(b);
-    }
     if (badges.children.length) main.appendChild(badges);
 
     main.addEventListener('click', () => openDetail(task));
