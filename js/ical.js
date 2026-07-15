@@ -169,21 +169,47 @@
 
   // ---- VTODO parsing ---------------------------------------------------
   // Parse a full calendar object (may contain a VTODO) into a task object.
+  // Nested components (VALARM etc.) are captured as raw line blocks so their
+  // properties never mix with the VTODO's own (e.g. a VALARM DESCRIPTION must
+  // not surface as the task description) and survive round-trips verbatim.
   function parseTodo(icsText) {
     const lines = unfold(icsText).split(/\r\n|\n|\r/);
     let inTodo = false;
     const props = {};
     let uid = null;
+    const alarms = [];      // arrays of raw VALARM property lines
+    const otherComps = [];  // { name, lines } for any other nested component
+    let nested = null;      // { name, lines, depth } while inside one
 
     for (const raw of lines) {
       if (!raw) continue;
       const upper = raw.toUpperCase();
-      if (upper.startsWith('BEGIN:VTODO')) { inTodo = true; continue; }
+      if (!inTodo) {
+        if (upper.startsWith('BEGIN:VTODO')) inTodo = true;
+        continue;
+      }
+      if (nested) {
+        if (upper.startsWith('BEGIN:')) {
+          nested.depth++;
+        } else if (upper.startsWith('END:')) {
+          if (nested.depth === 0) {
+            if (nested.name === 'VALARM') alarms.push(nested.lines);
+            else otherComps.push({ name: nested.name, lines: nested.lines });
+            nested = null;
+            continue;
+          }
+          nested.depth--;
+        }
+        nested.lines.push(raw);
+        continue;
+      }
       if (upper.startsWith('END:VTODO')) { inTodo = false; continue; }
-      if (!inTodo) continue;
+      if (upper.startsWith('BEGIN:')) {
+        nested = { name: upper.slice(6).trim(), lines: [], depth: 0 };
+        continue;
+      }
       const p = parseLine(raw);
       if (!p) continue;
-      // Store multi-valued props as-is; keep first occurrence for singletons.
       props[p.name] = p;
       if (p.name === 'UID') uid = p.value;
     }
@@ -204,7 +230,9 @@
       rrule: props.RRULE ? parseRRule(props.RRULE.value) : null,
       created: props.CREATED ? props.CREATED.value : null,
       lastModified: props['LAST-MODIFIED'] ? props['LAST-MODIFIED'].value : null,
-      // Preserve unknown props so we don't lose data on round-trip.
+      alarms: alarms,
+      // Preserve unknown props / components so we don't lose data on round-trip.
+      _components: otherComps,
       _extra: {},
     };
 
@@ -277,6 +305,18 @@
         lines.push(head + ':' + p.value);
       });
     }
+
+    // Re-emit nested components (properties must precede components).
+    (task.alarms || []).forEach(function (alarmLines) {
+      lines.push('BEGIN:VALARM');
+      alarmLines.forEach(function (l) { lines.push(l); });
+      lines.push('END:VALARM');
+    });
+    (task._components || []).forEach(function (c) {
+      lines.push('BEGIN:' + c.name);
+      c.lines.forEach(function (l) { lines.push(l); });
+      lines.push('END:' + c.name);
+    });
 
     lines.push('END:VTODO');
     lines.push('END:VCALENDAR');
