@@ -379,7 +379,7 @@
       };
       li.addEventListener('transitionend', finish);
       setTimeout(finish, 400); // fallback if transitionend doesn't fire
-    }, 500);
+    }, 200);
   }
 
   // True while a completion animation is in progress (used to defer re-renders
