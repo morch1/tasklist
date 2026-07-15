@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#ffffff" />
+  <title>Tasks</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <!-- App bar -->
+  <header class="appbar">
+    <button id="menuBtn" class="icon-btn" title="Menu" aria-label="Menu">
+      <svg viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </button>
+    <h1 id="appTitle" class="appbar-title">Tasks</h1>
+    <div class="appbar-spacer"></div>
+    <span id="syncIndicator" class="sync-indicator" title="Sync status"></span>
+    <button id="settingsBtn" class="icon-btn" title="Settings" aria-label="Settings">
+      <svg viewBox="0 0 24 24"><path d="M19.14 12.94a7.5 7.5 0 000-1.88l2.03-1.58a.5.5 0 00.12-.64l-1.92-3.32a.5.5 0 00-.6-.22l-2.39.96a7 7 0 00-1.62-.94l-.36-2.54a.5.5 0 00-.5-.42h-3.84a.5.5 0 00-.5.42l-.36 2.54c-.58.24-1.12.56-1.62.94l-2.39-.96a.5.5 0 00-.6.22L2.6 8.84a.5.5 0 00.12.64l2.03 1.58a7.5 7.5 0 000 1.88l-2.03 1.58a.5.5 0 00-.12.64l1.92 3.32c.14.24.42.34.68.22l2.39-.96c.5.38 1.04.7 1.62.94l.36 2.54c.04.24.25.42.5.42h3.84c.25 0 .46-.18.5-.42l.36-2.54c.58-.24 1.12-.56 1.62-.94l2.39.96c.26.12.54.02.68-.22l1.92-3.32a.5.5 0 00-.12-.64l-2.03-1.58zM12 15.5A3.5 3.5 0 1112 8.5a3.5 3.5 0 010 7z"/></svg>
+    </button>
+  </header>
+
+  <!-- Sidebar -->
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-header">Task lists</div>
+    <nav id="listNav" class="list-nav"><!-- populated --></nav>
+  </aside>
+  <div id="scrim" class="scrim"></div>
+
+  <!-- Main content -->
+  <main class="main">
+    <div id="statusBanner" class="status-banner hidden"></div>
+    <div id="taskContainer" class="task-container">
+      <ul id="taskList" class="task-list"><!-- populated --></ul>
+
+      <div id="completedSection" class="completed-section hidden">
+        <div class="completed-divider"><span>Completed</span></div>
+        <ul id="completedList" class="task-list"><!-- populated --></ul>
+      </div>
+
+      <div id="emptyState" class="empty-state hidden">
+        <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+        <p>All done!</p>
+      </div>
+    </div>
+
+    <div class="bottom-bar">
+      <button id="toggleCompletedBtn" class="text-btn hidden">Show completed</button>
+    </div>
+  </main>
+
+  <!-- Floating add button -->
+  <button id="addBtn" class="fab" title="Add a task" aria-label="Add a task">
+    <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6z"/></svg>
+  </button>
+
+  <!-- ===== Settings modal ===== -->
+  <div id="settingsModal" class="modal-overlay hidden">
+    <div class="modal sheet">
+      <div class="modal-header">
+        <h2>CalDAV connection</h2>
+        <button class="icon-btn modal-close" data-close="settingsModal" aria-label="Close">
+          <svg viewBox="0 0 24 24"><path d="M18.3 5.71L12 12l6.3 6.29-1.41 1.42L10.59 13.4 4.3 19.71 2.89 18.3 9.18 12 2.89 5.71 4.3 4.29 10.59 10.6 16.89 4.29z"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <label class="field">
+          <span>Server URL</span>
+          <input id="cfgUrl" type="url" placeholder="https://caldav.example.com/dav/" autocomplete="off" />
+        </label>
+        <label class="field">
+          <span>Username</span>
+          <input id="cfgUser" type="text" autocomplete="username" />
+        </label>
+        <label class="field">
+          <span>Password</span>
+          <input id="cfgPass" type="password" autocomplete="current-password" />
+        </label>
+        <label class="field">
+          <span>Refresh interval (seconds)</span>
+          <input id="cfgInterval" type="number" min="2" max="600" value="5" />
+        </label>
+        <p class="hint">Credentials are stored only in this browser's local storage. The
+          server must allow cross-origin (CORS) CalDAV requests for a purely client-side app.</p>
+        <div id="settingsError" class="form-error hidden"></div>
+      </div>
+      <div class="modal-actions">
+        <button id="disconnectBtn" class="text-btn danger hidden">Disconnect</button>
+        <div class="modal-actions-spacer"></div>
+        <button class="text-btn" data-close="settingsModal">Cancel</button>
+        <button id="saveConnBtn" class="filled-btn">Connect</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Task detail modal ===== -->
+  <div id="detailModal" class="modal-overlay hidden">
+    <div class="modal sheet">
+      <div class="modal-header">
+        <h2>Task</h2>
+        <button class="icon-btn modal-close" data-close="detailModal" aria-label="Close">
+          <svg viewBox="0 0 24 24"><path d="M18.3 5.71L12 12l6.3 6.29-1.41 1.42L10.59 13.4 4.3 19.71 2.89 18.3 9.18 12 2.89 5.71 4.3 4.29 10.59 10.6 16.89 4.29z"/></svg>
+        </button>
+      </div>
+      <div class="modal-body" id="detailBody"><!-- populated --></div>
+      <div class="modal-actions">
+        <button id="deleteTaskBtn" class="text-btn danger">Delete</button>
+        <div class="modal-actions-spacer"></div>
+        <button id="editTaskBtn" class="filled-btn">Edit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Add / Edit task modal ===== -->
+  <div id="formModal" class="modal-overlay hidden">
+    <div class="modal sheet">
+      <div class="modal-header">
+        <h2 id="formTitle">Add a task</h2>
+        <button class="icon-btn modal-close" data-close="formModal" aria-label="Close">
+          <svg viewBox="0 0 24 24"><path d="M18.3 5.71L12 12l6.3 6.29-1.41 1.42L10.59 13.4 4.3 19.71 2.89 18.3 9.18 12 2.89 5.71 4.3 4.29 10.59 10.6 16.89 4.29z"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <label class="field">
+          <span>Title</span>
+          <input id="fTitle" type="text" placeholder="Task title" />
+        </label>
+
+        <div class="field">
+          <span>Priority</span>
+          <div id="fPriority" class="priority-picker" role="radiogroup">
+            <button type="button" class="pri-opt" data-pri="none">None</button>
+            <button type="button" class="pri-opt" data-pri="low">Low</button>
+            <button type="button" class="pri-opt" data-pri="medium">Medium</button>
+            <button type="button" class="pri-opt" data-pri="high">High</button>
+          </div>
+        </div>
+
+        <label class="field">
+          <span>Due date</span>
+          <input id="fDue" type="date" />
+        </label>
+
+        <div class="field">
+          <span>Repeat</span>
+          <div class="repeat-row">
+            <label class="repeat-toggle">
+              <input id="fRepeatOn" type="checkbox" /> Repeats
+            </label>
+          </div>
+          <div id="repeatDetails" class="repeat-details hidden">
+            <div class="repeat-line">
+              <span>Every</span>
+              <input id="fRepeatInterval" type="number" min="1" value="1" class="num-input" />
+              <select id="fRepeatFreq">
+                <option value="DAILY">days</option>
+                <option value="WEEKLY">weeks</option>
+                <option value="MONTHLY">months</option>
+                <option value="YEARLY">years</option>
+              </select>
+            </div>
+            <div class="repeat-line">
+              <span>Ends</span>
+              <select id="fRepeatEnd">
+                <option value="never">Never</option>
+                <option value="until">On date</option>
+                <option value="count">After occurrences</option>
+              </select>
+            </div>
+            <div class="repeat-line" id="repeatUntilLine">
+              <span>On</span>
+              <input id="fRepeatUntil" type="date" />
+            </div>
+            <div class="repeat-line" id="repeatCountLine">
+              <span>After</span>
+              <input id="fRepeatCount" type="number" min="1" value="10" class="num-input" />
+              <span>occurrences</span>
+            </div>
+          </div>
+        </div>
+
+        <label class="field">
+          <span>Description</span>
+          <textarea id="fDesc" rows="3" placeholder="Details"></textarea>
+        </label>
+
+        <label class="field">
+          <span>Task list</span>
+          <select id="fList"></select>
+        </label>
+
+        <div id="formError" class="form-error hidden"></div>
+      </div>
+      <div class="modal-actions">
+        <div class="modal-actions-spacer"></div>
+        <button class="text-btn" data-close="formModal">Cancel</button>
+        <button id="saveTaskBtn" class="filled-btn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Confirm dialog ===== -->
+  <div id="confirmModal" class="modal-overlay hidden">
+    <div class="modal dialog">
+      <div class="modal-body">
+        <h2 id="confirmTitle">Delete task?</h2>
+        <p id="confirmMsg">This can't be undone.</p>
+      </div>
+      <div class="modal-actions">
+        <div class="modal-actions-spacer"></div>
+        <button class="text-btn" id="confirmCancel">Cancel</button>
+        <button class="filled-btn danger" id="confirmOk">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/ical.js"></script>
+  <script src="js/caldav.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

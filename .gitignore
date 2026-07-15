@@ -1,0 +1,27 @@
+# Environment / local config
+.env
+.env.*
+!.env.example
+
+# Node (only if tooling is added later)
+node_modules/
+npm-debug.log*
+yarn-error.log*
+package-lock.json
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS cruft
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs & temp
+*.log
+tmp/
+*.tmp

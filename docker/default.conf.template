@@ -1,0 +1,19 @@
+# Rendered at container start by nginx's envsubst entrypoint.
+# ${BIND_IP} and ${PORT} come from the environment; $uri is left untouched
+# because it is not an environment variable.
+server {
+    listen ${BIND_IP}:${PORT};
+    server_name _;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # Never cache the HTML shell so app updates show up immediately.
+    location = /index.html {
+        add_header Cache-Control "no-cache";
+    }
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+}
