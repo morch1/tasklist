@@ -139,13 +139,11 @@
         </label>
 
         <div class="field">
-          <span>Priority</span>
-          <div id="fPriority" class="priority-picker" role="radiogroup">
-            <button type="button" class="pri-opt" data-pri="none">None</button>
-            <button type="button" class="pri-opt" data-pri="low">Low</button>
-            <button type="button" class="pri-opt" data-pri="medium">Medium</button>
-            <button type="button" class="pri-opt" data-pri="high">High</button>
-          </div>
+          <span>Flag</span>
+          <button type="button" id="fFlag" class="flag-toggle" data-flagged="false" aria-pressed="false">
+            <svg class="flag" viewBox="0 0 24 24"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z"/></svg>
+            <span class="flag-label">Not flagged</span>
+          </button>
         </div>
 
         <label class="field">

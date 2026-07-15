@@ -5,40 +5,12 @@
 (function (global) {
   'use strict';
 
-  // ---- Priority mapping ------------------------------------------------
-  // App priority levels <-> iCalendar PRIORITY integer (RFC 5545).
-  //   none   -> undefined (omitted / 0)
-  //   high   -> 1
-  //   medium -> 5
-  //   low    -> 9
-  const PRIORITY = { NONE: 'none', LOW: 'low', MEDIUM: 'medium', HIGH: 'high' };
-
-  function priorityFromInt(n) {
-    if (n === undefined || n === null || n === 0 || isNaN(n)) return PRIORITY.NONE;
-    if (n >= 1 && n <= 4) return PRIORITY.HIGH;
-    if (n === 5) return PRIORITY.MEDIUM;
-    if (n >= 6 && n <= 9) return PRIORITY.LOW;
-    return PRIORITY.NONE;
-  }
-
-  function priorityToInt(p) {
-    switch (p) {
-      case PRIORITY.HIGH: return 1;
-      case PRIORITY.MEDIUM: return 5;
-      case PRIORITY.LOW: return 9;
-      default: return 0;
-    }
-  }
-
-  // Sort rank: higher number sorts first.
-  function priorityRank(p) {
-    switch (p) {
-      case PRIORITY.HIGH: return 3;
-      case PRIORITY.MEDIUM: return 2;
-      case PRIORITY.LOW: return 1;
-      default: return 0;
-    }
-  }
+  // ---- Priority / flag -------------------------------------------------
+  // The app models priority as a single "flagged" boolean. A task is flagged
+  // if the iCalendar PRIORITY property is set to anything other than 0. The
+  // original integer is preserved so round-tripping a task flagged elsewhere
+  // (e.g. PRIORITY:5) doesn't clobber its value. Toggling the flag on writes
+  // the highest priority (1); toggling it off removes the property.
 
   // ---- Line unfolding / folding ---------------------------------------
   function unfold(text) {
@@ -222,7 +194,8 @@
       uid: uid,
       summary: props.SUMMARY ? unescapeText(props.SUMMARY.value) : '',
       description: props.DESCRIPTION ? unescapeText(props.DESCRIPTION.value) : '',
-      priority: props.PRIORITY ? priorityFromInt(parseInt(props.PRIORITY.value, 10)) : PRIORITY.NONE,
+      priorityInt: props.PRIORITY ? (parseInt(props.PRIORITY.value, 10) || 0) : 0,
+      flagged: props.PRIORITY ? (parseInt(props.PRIORITY.value, 10) || 0) > 0 : false,
       status: props.STATUS ? props.STATUS.value.toUpperCase() : 'NEEDS-ACTION',
       completed: props.STATUS && props.STATUS.value.toUpperCase() === 'COMPLETED',
       due: null,
@@ -271,8 +244,7 @@
     lines.push('SUMMARY:' + escapeText(task.summary || ''));
     if (task.description) lines.push('DESCRIPTION:' + escapeText(task.description));
 
-    const pInt = priorityToInt(task.priority);
-    if (pInt) lines.push('PRIORITY:' + pInt);
+    if (task.flagged) lines.push('PRIORITY:' + (task.priorityInt > 0 ? task.priorityInt : 1));
 
     if (task.due) {
       if (task.dueDateOnly) lines.push('DUE;VALUE=DATE:' + formatDate(task.due, true));
@@ -317,10 +289,6 @@
   }
 
   global.ICAL = {
-    PRIORITY: PRIORITY,
-    priorityFromInt: priorityFromInt,
-    priorityToInt: priorityToInt,
-    priorityRank: priorityRank,
     parseTodo: parseTodo,
     buildTodo: buildTodo,
     parseDate: parseDate,

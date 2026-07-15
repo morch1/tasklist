@@ -109,8 +109,8 @@
       const ao = isOverdue(a), bo = isOverdue(b);
       if (ao !== bo) return ao ? -1 : 1;
 
-      const pr = ICAL.priorityRank(b.priority) - ICAL.priorityRank(a.priority);
-      if (pr !== 0) return pr;
+      // Flagged tasks sort before unflagged.
+      if (!!a.flagged !== !!b.flagged) return a.flagged ? -1 : 1;
 
       // Due date ascending; tasks without a due date sort last.
       const at = a.due ? a.due.getTime() : Infinity;
@@ -223,13 +223,13 @@
     main.addEventListener('click', () => openDetail(task));
     li.appendChild(main);
 
-    // Priority indicator
+    // Flag indicator
     const pri = document.createElement('button');
     pri.className = 'pri-indicator';
-    pri.dataset.pri = task.priority;
+    pri.dataset.flagged = task.flagged ? 'true' : 'false';
     pri.innerHTML = SVG.flag;
-    pri.title = 'Priority: ' + task.priority;
-    pri.addEventListener('click', (e) => { e.stopPropagation(); cyclePriority(task); });
+    pri.title = task.flagged ? 'Flagged' : 'Not flagged';
+    pri.addEventListener('click', (e) => { e.stopPropagation(); toggleFlag(task); });
     li.appendChild(pri);
 
     return li;
@@ -293,10 +293,10 @@
     }
   }
 
-  const PRI_CYCLE = ['none', 'low', 'medium', 'high'];
-  function cyclePriority(task) {
-    const idx = PRI_CYCLE.indexOf(task.priority);
-    task.priority = PRI_CYCLE[(idx + 1) % PRI_CYCLE.length];
+  // Toggle the flag between highest priority (1) and none.
+  function toggleFlag(task) {
+    task.flagged = !task.flagged;
+    task.priorityInt = task.flagged ? 1 : 0;
     renderTasks();
     pushTask(task);
   }
@@ -362,9 +362,9 @@
     const rows = [];
     rows.push('<div class="detail-title"></div>');
 
-    const priClass = task.priority;
-    const priLabel = task.priority.charAt(0).toUpperCase() + task.priority.slice(1);
-    rows.push(row('Priority', '<span class="detail-pri-chip ' + priClass + '">' + SVG.flag + priLabel + '</span>'));
+    rows.push(row('Flag',
+      '<button id="detailFlagBtn" class="flag-toggle" data-flagged="' + (task.flagged ? 'true' : 'false') + '">' +
+      SVG.flag + '<span class="flag-label">' + (task.flagged ? 'Flagged' : 'Not flagged') + '</span></button>', true));
 
     if (task.due) {
       rows.push(row('Due', '<span class="value ' + (isOverdue(task) ? 'overdue' : '') + '">' +
@@ -380,6 +380,8 @@
 
     body.innerHTML = rows.join('');
     body.querySelector('.detail-title').textContent = task.summary || '(No title)';
+    const fb = $('detailFlagBtn');
+    if (fb) fb.addEventListener('click', () => { toggleFlag(task); openDetail(task); });
     show('detailModal');
   }
   function row(label, valueHtml, raw) {
@@ -393,13 +395,13 @@
 
   // ---- Add / Edit form -------------------------------------------------
   let editingTask = null; // null => add mode
-  let formPriority = 'none';
+  let formFlagged = false;
 
-  function setFormPriority(p) {
-    formPriority = p;
-    document.querySelectorAll('#fPriority .pri-opt').forEach((el) => {
-      el.classList.toggle('selected', el.dataset.pri === p);
-    });
+  function setFormFlag(flagged) {
+    formFlagged = !!flagged;
+    const btn = $('fFlag');
+    btn.dataset.flagged = formFlagged ? 'true' : 'false';
+    btn.querySelector('.flag-label').textContent = formFlagged ? 'Flagged' : 'Not flagged';
   }
 
   function openForm(task) {
@@ -418,14 +420,14 @@
 
     if (task) {
       $('fTitle').value = task.summary || '';
-      setFormPriority(task.priority);
+      setFormFlag(task.flagged);
       $('fDue').value = task.due ? toDateInput(task.due) : '';
       $('fDesc').value = task.description || '';
       sel.value = task._collectionURL;
       loadRepeatForm(task.rrule);
     } else {
       $('fTitle').value = '';
-      setFormPriority('none');
+      setFormFlag(false);
       $('fDue').value = '';
       $('fDesc').value = '';
       sel.value = state.lastUsedCollection ||
@@ -502,7 +504,8 @@
       };
     }
     task.summary = title;
-    task.priority = formPriority;
+    task.flagged = formFlagged;
+    task.priorityInt = formFlagged ? (task.priorityInt > 0 ? task.priorityInt : 1) : 0;
     task.due = due;
     task.dueDateOnly = !!due;
     task.description = $('fDesc').value.trim();
@@ -819,9 +822,7 @@
 
     // Form
     $('saveTaskBtn').addEventListener('click', saveForm);
-    document.querySelectorAll('#fPriority .pri-opt').forEach((el) => {
-      el.addEventListener('click', () => setFormPriority(el.dataset.pri));
-    });
+    $('fFlag').addEventListener('click', () => setFormFlag(!formFlagged));
     $('fRepeatOn').addEventListener('change', () => {
       $('repeatDetails').classList.toggle('hidden', !$('fRepeatOn').checked);
     });
