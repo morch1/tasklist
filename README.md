@@ -4,6 +4,8 @@ A minimal, Google Tasks–style task manager that talks directly to a CalDAV
 server from the browser. No build step, no backend, no dependencies — just
 static HTML/CSS/JS and browser storage.
 
+**NOTE:** I made this for my own personal use. Many of the CalDAV VTODO features are not available (task start date, subtasks, etc) simply because I don't need them. This also means that this app is provided as-is, with no guarantee or even expectation that it will fit anyone else's requirements other than my own.
+
 ## Screenshots
 
 | Task list | Add a task | CalDAV connection |
