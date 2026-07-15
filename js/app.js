@@ -205,7 +205,7 @@
     check.className = 'check';
     check.innerHTML = SVG.check;
     check.title = task.completed ? 'Mark not done' : 'Mark done';
-    check.addEventListener('click', (e) => { e.stopPropagation(); toggleComplete(task); });
+    check.addEventListener('click', (e) => { e.stopPropagation(); toggleComplete(task, li); });
     li.appendChild(check);
 
     // Main (title + badges)
@@ -316,26 +316,55 @@
     pushTask(task);
   }
 
-  function toggleComplete(task) {
-    if (!task.completed) {
-      // If recurring, roll to the next occurrence instead of completing.
-      if (task.rrule && task.rrule.FREQ && rollRecurrence(task)) {
-        renderTasks();
-        renderSidebar();
-        pushTask(task);
-        return;
-      }
-      task.completed = true;
-      task.status = 'COMPLETED';
-      task.completedAt = ICAL.nowStamp();
-    } else {
+  function toggleComplete(task, li) {
+    if (task.completed) {
+      // Un-completing happens immediately (no animation).
       task.completed = false;
       task.status = 'NEEDS-ACTION';
       task.completedAt = null;
+      pushTask(task);
+      renderSidebar();
+      renderTasks();
+      return;
     }
-    renderTasks();
-    renderSidebar();
+
+    // Completing: update the model and push to the backend immediately. The
+    // delay before the list re-renders is purely cosmetic.
+    if (!(task.rrule && task.rrule.FREQ && rollRecurrence(task))) {
+      task.completed = true;
+      task.status = 'COMPLETED';
+      task.completedAt = ICAL.nowStamp();
+    }
     pushTask(task);
+
+    if (li && li.isConnected) animateComplete(li);
+    else { renderSidebar(); renderTasks(); }
+  }
+
+  // Show the checked task in its "done" state, hold briefly, fade it out, then
+  // re-render so it lands in the completed section (or its next recurring
+  // occurrence appears) instantly. The item ignores UI input throughout.
+  function animateComplete(li) {
+    li.classList.add('done', 'completing');
+    setTimeout(function () {
+      li.classList.add('leaving');
+      let done = false;
+      const finish = function () {
+        if (done) return;
+        done = true;
+        li.removeEventListener('transitionend', finish);
+        renderSidebar();
+        renderTasks();
+      };
+      li.addEventListener('transitionend', finish);
+      setTimeout(finish, 400); // fallback if transitionend doesn't fire
+    }, 500);
+  }
+
+  // True while a completion animation is in progress (used to defer re-renders
+  // that would otherwise yank the animating element out from under the user).
+  function isAnimating() {
+    return !!document.querySelector('.task-item.completing');
   }
 
   // Advance a recurring task to its next occurrence.
@@ -727,8 +756,9 @@
           changed = true;
         }
       }
-      if (changed) {
-        // Preserve open modals; just refresh the visible list.
+      if (changed && !isAnimating()) {
+        // Preserve open modals; just refresh the visible list. If a completion
+        // animation is running, its own finish handler will render the update.
         renderSidebar();
         renderTasks();
       }

@@ -168,6 +168,11 @@ body.sidebar-collapsed .main { margin-left: 0; }
 }
 .task-item:hover { background: var(--hover); }
 
+/* Completion animation: hold in the "done" state, then quickly fade out.
+   `completing` blocks all UI input on the item during the animation. */
+.task-item.completing { pointer-events: none; }
+.task-item.leaving { opacity: 0; transition: opacity .22s ease; }
+
 .check {
   flex: none;
   width: 22px; height: 22px;
