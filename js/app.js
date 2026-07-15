@@ -644,6 +644,31 @@
     renderSidebar();
   }
 
+  // Delete every completed task in the current view (after confirmation).
+  async function deleteAllCompleted() {
+    const completed = currentTasks().filter((t) => t.completed);
+    if (!completed.length) return;
+    const ok = await confirmDialog('Delete all completed?',
+      'This will permanently delete ' + completed.length + ' completed task' +
+      (completed.length === 1 ? '' : 's') + '.', 'Delete all');
+    if (!ok) return;
+
+    setSync('syncing');
+    let failed = 0;
+    for (const task of completed) {
+      try {
+        await state.client.deleteTodo(task.href, task.etag);
+        state.tasks[task._collectionURL] = (state.tasks[task._collectionURL] || []).filter((t) => t.uid !== task.uid);
+      } catch (e) {
+        failed++;
+      }
+    }
+    setSync(failed ? 'error' : 'ok');
+    if (failed) showBanner('Could not delete ' + failed + ' completed task' + (failed === 1 ? '' : 's') + '.');
+    renderTasks();
+    renderSidebar();
+  }
+
   // ---- Date input helpers ---------------------------------------------
   function toDateInput(date) {
     const y = date.getFullYear(), m = date.getMonth() + 1, d = date.getDate();
@@ -922,6 +947,8 @@
       saveUIState();
       renderTasks();
     });
+
+    $('deleteAllCompletedBtn').addEventListener('click', deleteAllCompleted);
 
     // Detail actions
     $('editTaskBtn').addEventListener('click', () => {
