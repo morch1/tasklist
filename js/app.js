@@ -242,14 +242,16 @@
     main.addEventListener('click', () => openDetail(task));
     li.appendChild(main);
 
-    // Flag indicator
-    const pri = document.createElement('button');
-    pri.className = 'pri-indicator';
-    pri.dataset.flagged = task.flagged ? 'true' : 'false';
-    pri.innerHTML = SVG.flag;
-    pri.title = task.flagged ? 'Flagged' : 'Not flagged';
-    pri.addEventListener('click', (e) => { e.stopPropagation(); toggleFlag(task); });
-    li.appendChild(pri);
+    // Flag indicator (hidden for completed tasks).
+    if (!task.completed) {
+      const pri = document.createElement('button');
+      pri.className = 'pri-indicator';
+      pri.dataset.flagged = task.flagged ? 'true' : 'false';
+      pri.innerHTML = SVG.flag;
+      pri.title = task.flagged ? 'Flagged' : 'Not flagged';
+      pri.addEventListener('click', (e) => { e.stopPropagation(); toggleFlag(task); });
+      li.appendChild(pri);
+    }
 
     return li;
   }
