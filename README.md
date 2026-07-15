@@ -10,15 +10,17 @@ static HTML/CSS/JS and browser storage.
   browser's `localStorage` only).
 - **Collapsible sidebar** listing every calendar collection that holds VTODOs.
   An **All Tasks** entry appears first and aggregates every list.
-- **Sorting** — overdue tasks first (by priority, then due date), then the rest
-  (by priority, then due date).
-- **Task rows** — round completion checkbox on the left, title with **due-date**
-  and **repeat** badges, and a tappable **priority** flag on the right that
-  cycles none → low → medium → high → none.
+- **Sorting** — flagged tasks first (by due date), then unflagged tasks (also
+  by due date). Tasks with no due date sort last within each group.
+- **Task rows** — round completion checkbox on the left, title (bold when
+  flagged) with **due-date** and **repeat** badges, and a tappable **flag** on
+  the right that toggles the task between flagged and not flagged. Tasks that
+  are overdue, or all-day and due today, show a red due-date badge.
 - **Detail view** with **Edit** and **Delete** (with confirmation).
-- **Add / Edit form** — title, priority, due date, repeat rules (every *n*
-  days/weeks/months/years, ending never / on a date / after *n* occurrences),
-  description, and target list (defaults to the last-used list).
+- **Add / Edit form** — title, flag, due date (all-day or a specific time),
+  repeat rules (every *n* days/weeks/months/years, ending never / on a date /
+  after *n* occurrences), description, and target list (defaults to the open
+  list, or the last-used list in the All Tasks view).
 - **Completed tasks** are hidden behind a **Show/Hide completed** toggle.
 - **Live sync** — the server is queried on open and then polled continuously
   (default every 5 s) using `getctag`, with an automatic etag-signature
@@ -117,10 +119,13 @@ Ways to satisfy this:
 
 This is a constraint of the client-only requirement, not of the app logic.
 
-## Priority mapping
+## Flagging
 
-App level ↔ iCalendar `PRIORITY` (RFC 5545): none = (omitted), high = 1,
-medium = 5, low = 9. Values 1–4 read back as high, 6–9 as low.
+Flagging maps to the iCalendar `PRIORITY` property (RFC 5545). A task reads as
+**flagged** whenever `PRIORITY` is set to a non-zero value; toggling the flag on
+writes the highest priority (`1`) and toggling it off removes the property. A
+priority set elsewhere (e.g. `PRIORITY:5`) still shows as flagged and its value
+is preserved on save unless you toggle the flag.
 
 ## Files
 

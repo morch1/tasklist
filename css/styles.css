@@ -195,6 +195,7 @@ body.sidebar-collapsed .main { margin-left: 0; }
   word-break: break-word;
 }
 .task-item.done .task-title { text-decoration: line-through; color: var(--text-secondary); }
+.task-item.flagged .task-title { font-weight: 700; }
 
 .task-desc {
   font-size: 13px;
@@ -352,6 +353,7 @@ body.sidebar-collapsed .main { margin-left: 0; }
 .field input[type="password"],
 .field input[type="number"],
 .field input[type="date"],
+.field input[type="time"],
 .field select,
 .field textarea {
   width: 100%;

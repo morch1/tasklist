@@ -117,13 +117,10 @@
   };
 
   // ---- Sorting ---------------------------------------------------------
-  // 1. Urgent first (overdue + all-day due today), by flag then due date.
-  // 2. Remaining, by flag then due date.
+  // 1. Flagged tasks first, by due date.
+  // 2. Unflagged tasks, by due date.
   function sortTasks(list) {
     return list.slice().sort(function (a, b) {
-      const ao = isUrgent(a), bo = isUrgent(b);
-      if (ao !== bo) return ao ? -1 : 1;
-
       // Flagged tasks sort before unflagged.
       if (!!a.flagged !== !!b.flagged) return a.flagged ? -1 : 1;
 
@@ -196,7 +193,7 @@
   // ---- Rendering: task list -------------------------------------------
   function makeTaskEl(task) {
     const li = document.createElement('li');
-    li.className = 'task-item' + (task.completed ? ' done' : '');
+    li.className = 'task-item' + (task.completed ? ' done' : '') + (task.flagged ? ' flagged' : '');
     li.dataset.uid = task.uid;
     li.dataset.href = task.href || '';
 
@@ -490,8 +487,9 @@
       setFormFlag(false);
       loadDueForm(null);
       $('fDesc').value = '';
-      sel.value = state.lastUsedCollection ||
-        (state.currentList !== ALL ? state.currentList : (state.collections[0] && state.collections[0].url));
+      // Default to the open list; in the All Tasks view, the last-used list.
+      const preferred = state.currentList !== ALL ? state.currentList : state.lastUsedCollection;
+      sel.value = preferred || (state.collections[0] && state.collections[0].url);
       loadRepeatForm(null);
     }
     show('formModal');
