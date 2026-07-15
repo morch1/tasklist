@@ -348,6 +348,10 @@
       task.status = 'COMPLETED';
       task.completedAt = ICAL.nowStamp();
     }
+    // Marking a task done always clears its flag (including recurring tasks,
+    // whose next occurrence starts unflagged).
+    task.flagged = false;
+    task.priorityInt = 0;
     pushTask(task);
 
     if (li && li.isConnected) animateComplete(li);
