@@ -429,7 +429,9 @@ body.sidebar-collapsed .main { margin-left: 0; }
 /* Sidebar open scrim on mobile */
 @media (max-width: 839px) {
   .main { margin-left: 0; }
-  .sidebar { transform: translateX(calc(-1 * var(--sidebar-w))); box-shadow: var(--shadow-2); }
-  body.sidebar-open .sidebar { transform: translateX(0); }
+  .sidebar { transform: translateX(calc(-1 * var(--sidebar-w))); }
+  /* Only cast the shadow while open, otherwise the off-screen sidebar's
+     shadow bleeds into the viewport from the left edge. */
+  body.sidebar-open .sidebar { transform: translateX(0); box-shadow: var(--shadow-2); }
   body.sidebar-open .scrim { opacity: 1; pointer-events: auto; }
 }
