@@ -4,6 +4,12 @@ A minimal, Google Tasks–style task manager that talks directly to a CalDAV
 server from the browser. No build step, no backend, no dependencies — just
 static HTML/CSS/JS and browser storage.
 
+## Screenshots
+
+| Task list | Add a task | CalDAV connection |
+|:---:|:---:|:---:|
+| ![Task list view](docs/screenshot-1.png) | ![Add a task form](docs/screenshot-2.png) | ![CalDAV connection settings](docs/screenshot-3.png) |
+
 ## Features
 
 - **Connection setup** — enter server URL, username, password (stored in this
