@@ -231,14 +231,19 @@
     }
 
     // ---- Create / update -----------------------------------------------
-    // Returns { etag } if the server reports it.
-    async putTodo(url, icsText, etag) {
+    // Returns { etag } of the stored resource. Pass isNew=true for a
+    // create-only PUT (If-None-Match: *). Updates use If-Match when an etag
+    // is known and are sent unconditionally otherwise — sending
+    // If-None-Match: * on an update would 409/412 against the existing
+    // resource (e.g. completing a task created moments earlier whose etag
+    // the server never exposed).
+    async putTodo(url, icsText, etag, isNew) {
       const headers = {
         'Authorization': this.auth,
         'Content-Type': 'text/calendar; charset=utf-8',
       };
       if (etag) headers['If-Match'] = etag;
-      else headers['If-None-Match'] = '*'; // create only if it doesn't exist
+      else if (isNew) headers['If-None-Match'] = '*'; // create only if it doesn't exist
       const resp = await fetch(url, {
         method: 'PUT',
         headers: headers,
@@ -246,8 +251,26 @@
         credentials: 'omit',
       });
       if (resp.status === 401) throw new Error('Authentication failed (401).');
-      if (!resp.ok) throw new Error('PUT failed: ' + resp.status + ' ' + resp.statusText);
-      return { etag: resp.headers.get('ETag') };
+      if (!resp.ok) {
+        const err = new Error('PUT failed: ' + resp.status + ' ' + resp.statusText);
+        err.status = resp.status;
+        throw err;
+      }
+      // Servers frequently omit the ETag on PUT responses, and even when they
+      // send it, CORS hides it unless Access-Control-Expose-Headers lists it.
+      // Fetch the fresh etag so later updates can use If-Match.
+      let newEtag = resp.headers.get('ETag');
+      if (!newEtag) {
+        try { newEtag = await this.getResourceEtag(url); } catch (e) { newEtag = null; }
+      }
+      return { etag: newEtag };
+    }
+
+    // Current etag of a single resource.
+    async getResourceEtag(url) {
+      const doc = await this.propfind(url, 0,
+        '<d:propfind xmlns:d="DAV:"><d:prop><d:getetag/></d:prop></d:propfind>');
+      return text(doc, 'getetag');
     }
 
     async deleteTodo(url, etag) {

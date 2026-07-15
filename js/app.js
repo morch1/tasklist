@@ -304,7 +304,16 @@
     const ics = ICAL.buildTodo(task);
     try {
       setSync('syncing');
-      const res = await state.client.putTodo(task.href, ics, task.etag);
+      let res;
+      try {
+        res = await state.client.putTodo(task.href, ics, task.etag);
+      } catch (e) {
+        // 409/412 means our etag is stale. Refresh it and retry once
+        // (last write wins).
+        if (e.status !== 409 && e.status !== 412) throw e;
+        task.etag = await state.client.getResourceEtag(task.href);
+        res = await state.client.putTodo(task.href, ics, task.etag);
+      }
       if (res.etag) task.etag = res.etag;
       setSync('ok');
     } catch (e) {
@@ -582,7 +591,7 @@
         task._collectionURL = colURL;
         task._collectionName = collectionName(colURL);
         task.href = colURL.replace(/\/?$/, '/') + task.uid + '.ics';
-        const res = await state.client.putTodo(task.href, ICAL.buildTodo(task), null);
+        const res = await state.client.putTodo(task.href, ICAL.buildTodo(task), null, true);
         if (res.etag) task.etag = res.etag;
         (state.tasks[colURL] = state.tasks[colURL] || []).push(task);
       } else if (movingList) {
@@ -592,7 +601,7 @@
         task._collectionName = collectionName(colURL);
         task.href = colURL.replace(/\/?$/, '/') + task.uid + '.ics';
         task.etag = null;
-        const res = await state.client.putTodo(task.href, ICAL.buildTodo(task), null);
+        const res = await state.client.putTodo(task.href, ICAL.buildTodo(task), null, true);
         if (res.etag) task.etag = res.etag;
         await state.client.deleteTodo(oldHref, oldEtag);
         state.tasks[oldURL] = (state.tasks[oldURL] || []).filter((t) => t.uid !== task.uid);
