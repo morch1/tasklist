@@ -54,6 +54,21 @@
     }
     return task.due < new Date();
   }
+  function isDueToday(task) {
+    if (!task.due) return false;
+    const d0 = new Date(task.due); d0.setHours(0, 0, 0, 0);
+    return d0.getTime() === startOfToday().getTime();
+  }
+  // "Urgent" tasks get a red due badge and sort in the top group alongside
+  // overdue/flagged tasks: anything overdue, plus all-day tasks due today.
+  // (A timed task due today only counts once its time has passed, which
+  // isOverdue already covers.)
+  function isUrgent(task) {
+    if (!task.due || task.completed) return false;
+    if (isOverdue(task)) return true;
+    if (task.dueDateOnly && isDueToday(task)) return true;
+    return false;
+  }
   function formatDueBadge(task) {
     const due = task.due;
     const today = startOfToday();
@@ -102,11 +117,11 @@
   };
 
   // ---- Sorting ---------------------------------------------------------
-  // 1. Overdue first, by priority then due date.
-  // 2. Remaining, by priority then due date.
+  // 1. Urgent first (overdue + all-day due today), by flag then due date.
+  // 2. Remaining, by flag then due date.
   function sortTasks(list) {
     return list.slice().sort(function (a, b) {
-      const ao = isOverdue(a), bo = isOverdue(b);
+      const ao = isUrgent(a), bo = isUrgent(b);
       if (ao !== bo) return ao ? -1 : 1;
 
       // Flagged tasks sort before unflagged.
@@ -205,7 +220,7 @@
     badges.className = 'badges';
     if (task.due) {
       const b = document.createElement('span');
-      b.className = 'badge' + (isOverdue(task) ? ' overdue' : '');
+      b.className = 'badge' + (isUrgent(task) ? ' overdue' : '');
       b.innerHTML = SVG.calendar + '<span></span>';
       b.querySelector('span').textContent = formatDueBadge(task);
       badges.appendChild(b);
@@ -367,7 +382,7 @@
       SVG.flag + '<span class="flag-label">' + (task.flagged ? 'Flagged' : 'Not flagged') + '</span></button>', true));
 
     if (task.due) {
-      rows.push(row('Due', '<span class="value ' + (isOverdue(task) ? 'overdue' : '') + '">' +
+      rows.push(row('Due', '<span class="value ' + (isUrgent(task) ? 'overdue' : '') + '">' +
         escapeHtml(formatFullDate(task.due, task.dueDateOnly)) + '</span>', true));
     }
     const rep = repeatText(task.rrule);
