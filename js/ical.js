@@ -230,6 +230,8 @@
       rrule: props.RRULE ? parseRRule(props.RRULE.value) : null,
       created: props.CREATED ? props.CREATED.value : null,
       lastModified: props['LAST-MODIFIED'] ? props['LAST-MODIFIED'].value : null,
+      // Revision counter: integer when present on the server, null when absent.
+      sequence: props.SEQUENCE ? (parseInt(props.SEQUENCE.value, 10) || 0) : null,
       alarms: alarms,
       // Preserve unknown props / components so we don't lose data on round-trip.
       _components: otherComps,
@@ -269,6 +271,9 @@
     lines.push('DTSTAMP:' + nowStamp());
     if (task.created) lines.push('CREATED:' + task.created);
     lines.push('LAST-MODIFIED:' + nowStamp());
+    if (task.sequence !== null && task.sequence !== undefined) {
+      lines.push('SEQUENCE:' + task.sequence);
+    }
     lines.push('SUMMARY:' + escapeText(task.summary || ''));
     if (task.description) lines.push('DESCRIPTION:' + escapeText(task.description));
 
@@ -328,6 +333,18 @@
     return rnd() + '-' + rnd() + '-' + Date.now().toString(36) + '@tasklist';
   }
 
+  // Bump the revision counter for an update: increment an existing SEQUENCE by
+  // one, or set it to 1 when the task has none. Apps use SEQUENCE to tell which
+  // version of a task is newest, so it must advance on every update.
+  function bumpSequence(task) {
+    if (task.sequence === null || task.sequence === undefined) {
+      task.sequence = 1;
+    } else {
+      task.sequence = (parseInt(task.sequence, 10) || 0) + 1;
+    }
+    return task.sequence;
+  }
+
   // ---- Managed due-date alarm -------------------------------------------
   // The app maintains one VALARM that fires exactly at the due date
   // (TRIGGER;RELATED=END:PT0S) with a DESCRIPTION matching the task title.
@@ -377,5 +394,6 @@
     generateUID: generateUID,
     nowStamp: nowStamp,
     syncDueAlarm: syncDueAlarm,
+    bumpSequence: bumpSequence,
   };
 })(typeof window !== 'undefined' ? window : this);

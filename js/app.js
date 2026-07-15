@@ -300,6 +300,8 @@
   async function pushTask(task) {
     // Serialize and PUT. Updates etag on success.
     task.lastModified = ICAL.nowStamp();
+    // Advance the revision counter since this is an update to an existing task.
+    ICAL.bumpSequence(task);
     const ics = ICAL.buildTodo(task);
     try {
       setSync('syncing');
@@ -612,6 +614,8 @@
         task._collectionName = collectionName(colURL);
         task.href = colURL.replace(/\/?$/, '/') + task.uid + '.ics';
         task.etag = null;
+        // Moving lists is still an update to the task; advance its revision.
+        ICAL.bumpSequence(task);
         const res = await state.client.putTodo(task.href, ICAL.buildTodo(task), null, true);
         if (res.etag) task.etag = res.etag;
         await state.client.deleteTodo(oldHref, oldEtag);
