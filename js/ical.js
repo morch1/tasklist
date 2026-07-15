@@ -328,6 +328,44 @@
     return rnd() + '-' + rnd() + '-' + Date.now().toString(36) + '@tasklist';
   }
 
+  // ---- Managed due-date alarm -------------------------------------------
+  // The app maintains one VALARM that fires exactly at the due date
+  // (TRIGGER;RELATED=END:PT0S) with a DESCRIPTION matching the task title.
+
+  function isDueAlarm(alarmLines) {
+    return alarmLines.some(function (l) {
+      const p = parseLine(l);
+      return !!p && p.name === 'TRIGGER' &&
+        String(p.params.RELATED || '').toUpperCase() === 'END' &&
+        p.value.toUpperCase() === 'PT0S';
+    });
+  }
+
+  // Ensure the managed alarm exists (and its DESCRIPTION tracks the title)
+  // when the task has a due date; remove it when the due date is cleared.
+  // Other alarms are left untouched.
+  function syncDueAlarm(task) {
+    const alarms = (task.alarms || []).slice();
+    const idx = alarms.findIndex(isDueAlarm);
+    if (task.due) {
+      const desc = 'DESCRIPTION:' + escapeText(task.summary || '');
+      if (idx === -1) {
+        alarms.push(['ACTION:DISPLAY', 'TRIGGER;RELATED=END:PT0S', desc]);
+      } else {
+        let replaced = false;
+        alarms[idx] = alarms[idx].map(function (l) {
+          const p = parseLine(l);
+          if (p && p.name === 'DESCRIPTION') { replaced = true; return desc; }
+          return l;
+        });
+        if (!replaced) alarms[idx].push(desc);
+      }
+    } else if (idx !== -1) {
+      alarms.splice(idx, 1);
+    }
+    task.alarms = alarms;
+  }
+
   global.ICAL = {
     parseTodo: parseTodo,
     buildTodo: buildTodo,
@@ -338,5 +376,6 @@
     advanceDate: advanceDate,
     generateUID: generateUID,
     nowStamp: nowStamp,
+    syncDueAlarm: syncDueAlarm,
   };
 })(typeof window !== 'undefined' ? window : this);

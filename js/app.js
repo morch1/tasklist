@@ -579,6 +579,8 @@
     task.dueDateOnly = due ? dueDateOnly : false;
     task.description = $('fDesc').value.trim();
     task.rrule = rrule;
+    // Keep the managed due-date alarm in step with the due date and title.
+    ICAL.syncDueAlarm(task);
 
     state.lastUsedCollection = colURL;
     saveUIState();
