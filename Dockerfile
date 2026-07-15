@@ -6,9 +6,12 @@ ENV BIND_IP=0.0.0.0 \
     PORT=8234
 
 # Static app assets.
-COPY index.html /usr/share/nginx/html/index.html
-COPY css/ /usr/share/nginx/html/css/
-COPY js/  /usr/share/nginx/html/js/
+COPY index.html            /usr/share/nginx/html/index.html
+COPY manifest.webmanifest  /usr/share/nginx/html/manifest.webmanifest
+COPY sw.js                 /usr/share/nginx/html/sw.js
+COPY css/   /usr/share/nginx/html/css/
+COPY js/    /usr/share/nginx/html/js/
+COPY icons/ /usr/share/nginx/html/icons/
 
 # nginx renders templates in /etc/nginx/templates/*.template through envsubst
 # at startup, writing the result to /etc/nginx/conf.d/ (overriding the default

@@ -33,6 +33,35 @@ Open `index.html` in a browser (double-click or serve the folder statically),
 then click the ⚙ gear to enter your CalDAV connection. Serving over `http(s)`
 (e.g. `npx serve .` or `python -m http.server`) is recommended over `file://`.
 
+## Progressive Web App
+
+The app is installable and works offline:
+
+- **`manifest.webmanifest`** — name, colors, and icons (`icons/`), so browsers
+  offer an **Install** / **Add to Home Screen** action and launch it in a
+  standalone window.
+- **`sw.js`** — a service worker that precaches the app shell (HTML/CSS/JS/icons)
+  with a stale-while-revalidate strategy. CalDAV requests are never intercepted,
+  so live sync is unaffected. The shell loads instantly and offline; task data
+  still needs the network to sync.
+
+**Secure-context requirement:** service workers and installation only work over
+**HTTPS**, or on **`http://localhost`** / `127.0.0.1`. Over a plain-HTTP LAN
+address (e.g. `http://192.168.x.x:8234`) the browser disables the service worker
+and won't offer installation — put the app behind TLS for full PWA behavior. The
+app itself still runs fine without it.
+
+### Icons
+
+`icons/icon.svg` is the master (a white checkmark on a blue rounded square).
+The PNGs (`icon-192/512`, `maskable-192/512`, `apple-touch-icon`, `favicon-32`)
+are rendered from it. To regenerate after editing the SVG, use any SVG
+rasterizer, e.g. with ImageMagick + librsvg:
+
+```sh
+magick -background none icons/icon.svg -resize 512x512 icons/icon-512.png
+```
+
 ## Running with Docker
 
 The repo ships a tiny nginx-based image that serves the static app. It takes two
