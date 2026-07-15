@@ -10,10 +10,8 @@
   --primary-hover: #1765cc;
   --danger: #d93025;
   --overdue: #d93025;
-  --high: #d93025;
-  --medium: #f9ab00;
-  --low: #1a73e8;
-  --flag: #f9ab00;
+  --syncing: #f9ab00;
+  --flag: #d93025;
   --shadow-1: 0 1px 2px rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15);
   --shadow-2: 0 2px 6px 2px rgba(60,64,67,.15), 0 1px 2px rgba(60,64,67,.3);
   --appbar-h: 56px;
@@ -73,7 +71,7 @@ button { font-family: inherit; cursor: pointer; }
   transition: background .3s;
 }
 .sync-indicator.ok { background: #34a853; }
-.sync-indicator.syncing { background: var(--medium); animation: pulse 1s infinite; }
+.sync-indicator.syncing { background: var(--syncing); animation: pulse 1s infinite; }
 .sync-indicator.error { background: var(--danger); }
 @keyframes pulse { 50% { opacity: .3; } }
 
@@ -392,8 +390,8 @@ body.sidebar-collapsed .main { margin-left: 0; }
 .flag-toggle .flag { width: 18px; height: 18px; opacity: .4; }
 .flag-toggle[data-flagged="true"] {
   border-color: var(--flag);
-  background: #fef7e0;
-  color: #b06000;
+  background: #fce8e6;
+  color: var(--flag);
   font-weight: 500;
 }
 .flag-toggle[data-flagged="true"] .flag { color: var(--flag); opacity: 1; }
