@@ -14,7 +14,7 @@
     client: null,          // CalDAV instance
     collections: [],       // [{ url, displayName, ctag, color }]
     tasks: {},             // collectionURL -> [task...]
-    currentList: ALL,      // ALL or a collection URL
+    selectedLists: [],     // array of collection URLs (all = all collections selected)
     lastUsedCollection: null,
     showCompleted: false,
     pollTimer: null,
@@ -35,7 +35,7 @@
   }
   function saveUIState() {
     localStorage.setItem(STATE_KEY, JSON.stringify({
-      currentList: state.currentList,
+      selectedLists: state.selectedLists,
       lastUsedCollection: state.lastUsedCollection,
       showCompleted: state.showCompleted,
     }));
@@ -135,18 +135,19 @@
 
   function currentTasks() {
     let list = [];
-    if (state.currentList === ALL) {
-      Object.keys(state.tasks).forEach((url) => { list = list.concat(state.tasks[url]); });
-    } else {
-      list = (state.tasks[state.currentList] || []).slice();
-    }
+    state.selectedLists.forEach((url) => { list = list.concat(state.tasks[url] || []); });
     return list;
   }
 
   // ---- Rendering: sidebar ---------------------------------------------
+  // Count active tasks: for a single collection URL or for ALL (all collections).
   function countActive(url) {
-    const list = url === ALL ? currentTasksAll() : (state.tasks[url] || []);
-    return list.filter((t) => !t.completed).length;
+    if (url === ALL) {
+      let list = [];
+      Object.keys(state.tasks).forEach((u) => { list = list.concat(state.tasks[u]); });
+      return list.filter((t) => !t.completed).length;
+    }
+    return (state.tasks[url] || []).filter((t) => !t.completed).length;
   }
   function currentTasksAll() {
     let list = [];
@@ -158,36 +159,71 @@
     const nav = $('listNav');
     nav.innerHTML = '';
 
-    const items = [{ url: ALL, displayName: 'All Tasks', color: null }].concat(state.collections);
-    items.forEach((col) => {
+    const allSelected = state.collections.length > 0 &&
+      state.collections.every((c) => state.selectedLists.indexOf(c.url) >= 0);
+
+    // "All Tasks" item — toggles all lists on/off
+    const allBtn = document.createElement('button');
+    allBtn.className = 'list-item' + (allSelected ? ' active' : '');
+    const allActive = countActive(ALL);
+    allBtn.innerHTML =
+      '<span class="checkbox"></span>' +
+      '<span class="name"></span>' +
+      (allActive ? '<span class="count">' + allActive + '</span>' : '');
+    allBtn.querySelector('.name').textContent = 'All Tasks';
+    allBtn.addEventListener('click', () => {
+      if (allSelected) {
+        // Deselect all
+        state.selectedLists = [];
+      } else {
+        // Select all
+        state.selectedLists = state.collections.map((c) => c.url);
+      }
+      saveUIState();
+      renderSidebar();
+      renderTasks();
+      updateTitle();
+    });
+    nav.appendChild(allBtn);
+
+    // Individual list items
+    state.collections.forEach((col) => {
       const btn = document.createElement('button');
-      btn.className = 'list-item' + (state.currentList === col.url ? ' active' : '');
+      const isSelected = state.selectedLists.indexOf(col.url) >= 0;
+      btn.className = 'list-item' + (isSelected ? ' active' : '');
       const active = countActive(col.url);
-      const dotColor = col.color ? ('style="background:' + col.color + '"') : '';
       btn.innerHTML =
-        '<span class="dot" ' + dotColor + '></span>' +
+        '<span class="checkbox"></span>' +
         '<span class="name"></span>' +
         (active ? '<span class="count">' + active + '</span>' : '');
       btn.querySelector('.name').textContent = col.displayName;
       btn.addEventListener('click', () => {
-        state.currentList = col.url;
+        const idx = state.selectedLists.indexOf(col.url);
+        if (idx >= 0) {
+          state.selectedLists.splice(idx, 1);
+        } else {
+          state.selectedLists.push(col.url);
+        }
         saveUIState();
         renderSidebar();
         renderTasks();
         updateTitle();
-        if (window.innerWidth < 840) document.body.classList.remove('sidebar-open');
       });
       nav.appendChild(btn);
     });
   }
 
   function updateTitle() {
-    let name = 'All Tasks';
-    if (state.currentList !== ALL) {
-      const c = state.collections.find((x) => x.url === state.currentList);
-      name = c ? c.displayName : 'Tasks';
+    if (state.selectedLists.length === 0) {
+      $('appTitle').textContent = 'Tasks';
+    } else if (state.selectedLists.length === 1) {
+      const c = state.collections.find((x) => x.url === state.selectedLists[0]);
+      $('appTitle').textContent = c ? c.displayName : 'Tasks';
+    } else if (state.selectedLists.length === state.collections.length) {
+      $('appTitle').textContent = 'All Tasks';
+    } else {
+      $('appTitle').textContent = state.selectedLists.length + ' lists';
     }
-    $('appTitle').textContent = name;
   }
 
   // ---- Rendering: task list -------------------------------------------
@@ -500,8 +536,8 @@
       setFormFlag(false);
       loadDueForm(null);
       $('fDesc').value = '';
-      // Default to the open list; in the All Tasks view, the last-used list.
-      const preferred = state.currentList !== ALL ? state.currentList : state.lastUsedCollection;
+      // Default to the first selected list; if none selected, the last-used list.
+      const preferred = (state.selectedLists[0] || state.lastUsedCollection);
       sel.value = preferred || (state.collections[0] && state.collections[0].url);
       loadRepeatForm(null);
     }
@@ -755,11 +791,14 @@
         }
       }));
 
-      // Restore current list if still valid.
-      if (state.currentList !== ALL && !state.collections.find((c) => c.url === state.currentList)) {
-        state.currentList = ALL;
+      // Restore selected lists, filtering out any stale collection URLs.
+      const validUrls = state.collections.map((c) => c.url);
+      state.selectedLists = state.selectedLists.filter((url) => validUrls.indexOf(url) >= 0);
+      // If nothing is selected, default to all lists.
+      if (state.selectedLists.length === 0) {
+        state.selectedLists = validUrls.slice();
       }
-      if (!state.lastUsedCollection || !state.collections.find((c) => c.url === state.lastUsedCollection)) {
+      if (!state.lastUsedCollection || validUrls.indexOf(state.lastUsedCollection) < 0) {
         state.lastUsedCollection = state.collections[0].url;
       }
 
@@ -998,7 +1037,15 @@
   function boot() {
     bind();
     const ui = loadUIState();
-    state.currentList = ui.currentList || ALL;
+    // Restore selected lists from saved state. Backward compat: if the old
+    // single-selection key exists, migrate it to the new array format.
+    if (Array.isArray(ui.selectedLists) && ui.selectedLists.length > 0) {
+      state.selectedLists = ui.selectedLists;
+    } else if (ui.currentList) {
+      state.selectedLists = ui.currentList === ALL ? [] : [ui.currentList];
+    } else {
+      state.selectedLists = [];
+    }
     state.lastUsedCollection = ui.lastUsedCollection || null;
     state.showCompleted = !!ui.showCompleted;
 
