@@ -113,7 +113,7 @@ body.sidebar-collapsed .sidebar { transform: translateX(calc(-1 * var(--sidebar-
   margin-right: 8px;
 }
 .list-item:hover { background: var(--hover); }
-.list-item.active { background: #e8f0fe; color: var(--primary); font-weight: 500; }
+.list-item.active { color: var(--primary); font-weight: 500; }
 .list-item .checkbox {
   width: 18px; height: 18px; border-radius: 4px; flex: none;
   border: 2px solid var(--border);
