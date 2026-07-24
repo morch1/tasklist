@@ -168,7 +168,6 @@
     const allActive = countActive(ALL);
     allBtn.innerHTML =
       '<span class="checkbox"></span>' +
-      '<span class="dot"></span>' +
       '<span class="name"></span>' +
       (allActive ? '<span class="count">' + allActive + '</span>' : '');
     allBtn.querySelector('.name').textContent = 'All Tasks';
@@ -184,7 +183,6 @@
       renderSidebar();
       renderTasks();
       updateTitle();
-      if (window.innerWidth < 840) document.body.classList.remove('sidebar-open');
     });
     nav.appendChild(allBtn);
 
@@ -194,10 +192,8 @@
       const isSelected = state.selectedLists.indexOf(col.url) >= 0;
       btn.className = 'list-item' + (isSelected ? ' active' : '');
       const active = countActive(col.url);
-      const dotColor = col.color ? ('style="background:' + col.color + '"') : '';
       btn.innerHTML =
         '<span class="checkbox"></span>' +
-        '<span class="dot" ' + dotColor + '></span>' +
         '<span class="name"></span>' +
         (active ? '<span class="count">' + active + '</span>' : '');
       btn.querySelector('.name').textContent = col.displayName;
@@ -212,7 +208,6 @@
         renderSidebar();
         renderTasks();
         updateTitle();
-        if (window.innerWidth < 840) document.body.classList.remove('sidebar-open');
       });
       nav.appendChild(btn);
     });
