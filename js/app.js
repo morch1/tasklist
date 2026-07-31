@@ -877,9 +877,8 @@
   function showBanner(msg, isError) {
     const b = $('statusBanner');
     b.textContent = msg;
+    b.classList.toggle('info', isError === false);
     b.classList.remove('hidden');
-    b.style.background = (isError === false) ? '#e8f0fe' : '#fce8e6';
-    b.style.color = (isError === false) ? '#1a73e8' : '#d93025';
   }
   function hideBanner() { $('statusBanner').classList.add('hidden'); }
   function showFormError(msg) { const e = $('formError'); e.textContent = msg; e.classList.remove('hidden'); }
