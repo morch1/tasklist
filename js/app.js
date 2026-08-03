@@ -258,13 +258,6 @@
 
     const badges = document.createElement('div');
     badges.className = 'badges';
-    if (task.due) {
-      const b = document.createElement('span');
-      b.className = 'badge' + (isUrgent(task) ? ' overdue' : '');
-      b.innerHTML = SVG.calendar + '<span></span>';
-      b.querySelector('span').textContent = formatDueBadge(task);
-      badges.appendChild(b);
-    }
     const rep = repeatText(task.rrule);
     if (rep) {
       const b = document.createElement('span');
@@ -277,6 +270,15 @@
 
     main.addEventListener('click', () => openDetail(task));
     li.appendChild(main);
+
+    // Due date badge on the right side (before flag icon).
+    if (task.due) {
+      const due = document.createElement('span');
+      due.className = 'due-badge' + (isUrgent(task) ? ' overdue' : '');
+      due.textContent = formatDueBadge(task);
+      due.addEventListener('click', (e) => { e.stopPropagation(); openDetail(task); });
+      li.appendChild(due);
+    }
 
     // Flag indicator (hidden for completed tasks).
     if (!task.completed) {
