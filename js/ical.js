@@ -500,6 +500,7 @@
     nowStamp: nowStamp,
     parseReminder: parseReminder,
     buildReminder: buildReminder,
+    isDueReminder: isDueAlarm,
     syncDueAlarm: syncDueAlarm,
     bumpSequence: bumpSequence,
   };

@@ -29,8 +29,9 @@ static HTML/CSS/JS and browser storage.
   repeat rules (every *n* days/weeks/months/years, ending never / on a date /
   after *n* occurrences), any number of reminders (at or before the due date,
   or at a specific date/time), description, and target list (defaults to the
-  open list, or the last-used list in the All Tasks view). Reminders are stored
-  as standard iCalendar `VALARM` components.
+  open list, or the last-used list in the All Tasks view). Setting a task's
+  first due date adds an at-due reminder by default. Reminders are stored as
+  standard iCalendar `VALARM` components.
 - **Completed tasks** are hidden behind a **Show/Hide completed** toggle.
 - **Live sync** — the server is queried on open and then polled continuously
   (default every 5 s) using `getctag`, with an automatic etag-signature

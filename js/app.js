@@ -506,6 +506,7 @@
   let editingTask = null; // null => add mode
   let formFlagged = false;
   let formReminders = []; // managed reminder models or preserved custom alarms
+  let formDueDateWasSet = false;
 
   function setFormFlag(flagged) {
     formFlagged = !!flagged;
@@ -760,6 +761,25 @@
     });
   }
 
+  function hasDueDateReminder() {
+    return formReminders.some(function (reminder) {
+      return reminder.type === 'due' ||
+        (reminder.type === 'custom' && ICAL.isDueReminder(reminder.alarmLines));
+    });
+  }
+
+  // Add the default at-due reminder only when a task gets its first due date.
+  // Once the form started with or has been given a due date, subsequent date
+  // changes must not recreate a reminder the user chose to remove.
+  function handleDueDateSet() {
+    if (!$('fDue').value || formDueDateWasSet) return;
+    formDueDateWasSet = true;
+    if (!hasDueDateReminder()) {
+      formReminders.push({ type: 'due' });
+      renderReminderForm();
+    }
+  }
+
   function addReminder() {
     if ($('fDue').value) {
       formReminders.push({ type: 'due' });
@@ -959,6 +979,7 @@
 
   // Populate the due-date/time controls from a task.
   function loadDueForm(task) {
+    formDueDateWasSet = !!(task && task.due);
     if (task && task.due) {
       $('fDue').value = toDateInput(task.due);
       if (task.dueDateOnly) {
@@ -1237,6 +1258,7 @@
     $('saveTaskBtn').addEventListener('click', saveForm);
     $('addReminderBtn').addEventListener('click', addReminder);
     $('fFlag').addEventListener('click', () => setFormFlag(!formFlagged));
+    $('fDue').addEventListener('change', handleDueDateSet);
     $('fAllDay').addEventListener('change', syncDueTimeVisibility);
     $('fRepeatOn').addEventListener('change', () => {
       $('repeatDetails').classList.toggle('hidden', !$('fRepeatOn').checked);
