@@ -345,10 +345,115 @@
     return task.sequence;
   }
 
-  // ---- Managed due-date alarm -------------------------------------------
-  // The app maintains one VALARM that fires exactly at the due date
-  // (TRIGGER;RELATED=END:PT0S) with a DESCRIPTION matching the task title.
+  // ---- Reminder alarms --------------------------------------------------
+  // Reminders are persisted as DISPLAY VALARMs. The task form supports
+  // alarms at/before DUE and absolute date/time alarms. Keep unrecognised
+  // VALARMs as raw lines so alarms created by other clients are not damaged.
 
+  function parseReminder(alarmLines) {
+    if (!Array.isArray(alarmLines)) return null;
+
+    const props = {};
+    const supported = new Set(['ACTION', 'TRIGGER', 'DESCRIPTION',
+      'X-TASKLIST-DATE-ONLY']);
+    for (const line of alarmLines) {
+      const p = parseLine(line);
+      if (!p || !supported.has(p.name) || props[p.name]) return null;
+      // Rebuilding parameterised ACTION/DESCRIPTION or extension properties
+      // could lose information that is not represented by the form.
+      if (p.name !== 'TRIGGER' && Object.keys(p.params).length) return null;
+      props[p.name] = p;
+    }
+
+    if (!props.ACTION || props.ACTION.value.toUpperCase() !== 'DISPLAY' ||
+        !props.TRIGGER) return null;
+
+    const trigger = props.TRIGGER;
+    const paramNames = Object.keys(trigger.params);
+    if (paramNames.some(function (name) {
+      return name !== 'RELATED' && name !== 'VALUE';
+    })) return null;
+
+    const related = String(trigger.params.RELATED || '').toUpperCase();
+    const valueType = String(trigger.params.VALUE || '').toUpperCase();
+    const value = trigger.value.toUpperCase();
+    const dateOnlyProp = props['X-TASKLIST-DATE-ONLY'];
+
+    if (related === 'END' && (!valueType || valueType === 'DURATION')) {
+      if (dateOnlyProp) return null;
+      if (value === 'PT0S') return { type: 'due' };
+
+      const patterns = [
+        { re: /^-PT(\d+)M$/, unit: 'minutes' },
+        { re: /^-PT(\d+)H$/, unit: 'hours' },
+        { re: /^-P(\d+)D$/, unit: 'days' },
+        { re: /^-P(\d+)W$/, unit: 'weeks' },
+      ];
+      for (const pattern of patterns) {
+        const match = value.match(pattern.re);
+        const amount = match ? Number(match[1]) : 0;
+        if (Number.isSafeInteger(amount) && amount > 0) {
+          return { type: 'before', amount: amount, unit: pattern.unit };
+        }
+      }
+      return null;
+    }
+
+    // RFC 5545 absolute TRIGGER values must be UTC DATE-TIME values. Seconds
+    // other than zero cannot be represented by the minute-precision form.
+    if (!related && valueType === 'DATE-TIME' &&
+        /^\d{8}T\d{6}Z$/.test(value)) {
+      const parsed = parseDate(value, trigger.params);
+      if (!parsed.date || parsed.date.getSeconds() !== 0) return null;
+      const dateOnly = !!dateOnlyProp &&
+        dateOnlyProp.value.toUpperCase() === 'TRUE';
+      if (dateOnlyProp && !dateOnly) return null;
+      return { type: 'absolute', date: parsed.date, dateOnly: dateOnly };
+    }
+
+    return null;
+  }
+
+  function buildReminder(reminder, summary) {
+    if (!reminder) throw new Error('Invalid reminder.');
+
+    let trigger;
+    if (reminder.type === 'due') {
+      trigger = 'TRIGGER;RELATED=END:PT0S';
+    } else if (reminder.type === 'before') {
+      const amount = Number(reminder.amount);
+      if (!Number.isSafeInteger(amount) || amount < 1) {
+        throw new Error('Reminder amount must be a positive integer.');
+      }
+      const duration = {
+        minutes: '-PT' + amount + 'M',
+        hours: '-PT' + amount + 'H',
+        days: '-P' + amount + 'D',
+        weeks: '-P' + amount + 'W',
+      }[reminder.unit];
+      if (!duration) throw new Error('Invalid reminder unit.');
+      trigger = 'TRIGGER;RELATED=END:' + duration;
+    } else if (reminder.type === 'absolute') {
+      if (!(reminder.date instanceof Date) || isNaN(reminder.date.getTime())) {
+        throw new Error('Invalid reminder date.');
+      }
+      trigger = 'TRIGGER;VALUE=DATE-TIME:' + formatDate(reminder.date, false);
+    } else {
+      throw new Error('Invalid reminder type.');
+    }
+
+    const lines = ['ACTION:DISPLAY', trigger];
+    // TRIGGER does not have a DATE value, so retain the user's date-only UI
+    // choice with an RFC-compatible extension while firing at local midnight.
+    if (reminder.type === 'absolute' && reminder.dateOnly) {
+      lines.push('X-TASKLIST-DATE-ONLY:TRUE');
+    }
+    lines.push('DESCRIPTION:' + escapeText(summary || ''));
+    return lines;
+  }
+
+  // Legacy helper retained for callers that want to manage a single implicit
+  // due-date alarm. The task form now manages its complete alarm list itself.
   function isDueAlarm(alarmLines) {
     return alarmLines.some(function (l) {
       const p = parseLine(l);
@@ -393,6 +498,8 @@
     advanceDate: advanceDate,
     generateUID: generateUID,
     nowStamp: nowStamp,
+    parseReminder: parseReminder,
+    buildReminder: buildReminder,
     syncDueAlarm: syncDueAlarm,
     bumpSequence: bumpSequence,
   };

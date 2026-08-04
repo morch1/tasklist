@@ -497,6 +497,34 @@ body.sidebar-collapsed .main { margin-left: 0; }
 .repeat-line select { width: auto !important; }
 .repeat-toggle { display: flex; align-items: center; gap: 8px; font-size: 14px; }
 
+/* Reminders */
+.reminder-list { display: flex; flex-direction: column; gap: 10px; }
+.reminder-empty { margin: 2px 0 8px; color: var(--text-secondary); font-size: 13px; }
+.reminder-item {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 10px 10px 12px;
+}
+.reminder-main { display: flex; align-items: center; gap: 8px; }
+.reminder-main .reminder-type { width: auto !important; min-width: 0; flex: 1; }
+.reminder-custom { flex: 1; color: var(--text-secondary); font-size: 14px; }
+.reminder-delete { flex: none; width: 36px; height: 36px; color: var(--danger); }
+.reminder-delete svg { width: 18px; height: 18px; }
+.reminder-options {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin-top: 10px;
+}
+.reminder-options > span { color: var(--text-secondary); font-size: 14px; }
+.reminder-options input[type="number"] { width: 72px !important; }
+.reminder-options input[type="date"],
+.reminder-options input[type="time"],
+.reminder-options select { width: auto !important; max-width: 100%; }
+.reminder-time-toggle {
+  display: inline-flex; align-items: center; gap: 7px;
+  color: var(--text); font-size: 14px;
+}
+.reminder-add { margin-top: 6px; padding-left: 8px; }
+
 /* Detail view */
 .detail-heading { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
 .detail-heading .check { margin-top: 4px; }

@@ -7,7 +7,7 @@
  *
  * Bump CACHE_VERSION whenever the app shell changes to roll the cache.
  */
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 const CACHE_NAME = 'tasklist-' + CACHE_VERSION;
 
 const APP_SHELL = [
