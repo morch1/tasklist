@@ -24,14 +24,15 @@ static HTML/CSS/JS and browser storage.
   flagged) with **due-date** and **repeat** badges, and a tappable **flag** on
   the right that toggles the task between flagged and not flagged. Tasks that
   are overdue, or all-day and due today, show a red due-date badge.
-- **Detail view** with **Edit** and **Delete** (with confirmation).
-- **Add / Edit form** — title, flag, due date (all-day or a specific time),
-  repeat rules (every *n* days/weeks/months/years, ending never / on a date /
-  after *n* occurrences), any number of reminders (at or before the due date,
-  or at a specific date/time), description, and target list (defaults to the
-  open list, or the last-used list in the All Tasks view). Setting a task's
-  first due date adds an at-due reminder by default. Reminders are stored as
-  standard iCalendar `VALARM` components.
+- **Add / Edit form** — clicking a task opens it directly for editing, with
+  **Save**, **Complete**, and **Delete** (with confirmation) actions. The form
+  includes title, flag, due date (all-day or a specific time), repeat rules
+  (every *n* days/weeks/months/years, ending never / on a date / after *n*
+  occurrences), any number of reminders (at or before the due date, or at a
+  specific date/time), description, and target list (defaults to the open list,
+  or the last-used list in the All Tasks view). Setting a task's first due date
+  adds an at-due reminder by default. Reminders are stored as standard
+  iCalendar `VALARM` components.
 - **Completed tasks** are hidden behind a **Show/Hide completed** toggle.
 - **Live sync** — the server is queried on open and then polled continuously
   (default every 5 s) using `getctag`, with an automatic etag-signature

@@ -110,24 +110,6 @@
     </div>
   </div>
 
-  <!-- ===== Task detail modal ===== -->
-  <div id="detailModal" class="modal-overlay hidden">
-    <div class="modal sheet">
-      <div class="modal-header">
-        <h2>Task</h2>
-        <button class="icon-btn modal-close" data-close="detailModal" aria-label="Close">
-          <svg viewBox="0 0 24 24"><path d="M18.3 5.71L12 12l6.3 6.29-1.41 1.42L10.59 13.4 4.3 19.71 2.89 18.3 9.18 12 2.89 5.71 4.3 4.29 10.59 10.6 16.89 4.29z"/></svg>
-        </button>
-      </div>
-      <div class="modal-body" id="detailBody"><!-- populated --></div>
-      <div class="modal-actions">
-        <button id="deleteTaskBtn" class="text-btn danger">Delete</button>
-        <div class="modal-actions-spacer"></div>
-        <button id="editTaskBtn" class="filled-btn">Edit</button>
-      </div>
-    </div>
-  </div>
-
   <!-- ===== Add / Edit task modal ===== -->
   <div id="formModal" class="modal-overlay hidden">
     <div class="modal sheet">
@@ -219,8 +201,10 @@
         <div id="formError" class="form-error hidden"></div>
       </div>
       <div class="modal-actions">
+        <button id="deleteTaskBtn" class="text-btn danger hidden">Delete</button>
         <div class="modal-actions-spacer"></div>
         <button class="text-btn" data-close="formModal">Cancel</button>
+        <button id="completeTaskBtn" class="filled-btn success hidden">Complete</button>
         <button id="saveTaskBtn" class="filled-btn">Save</button>
       </div>
     </div>

@@ -88,11 +88,6 @@
     }
     return label;
   }
-  function formatFullDate(date, dateOnly) {
-    if (dateOnly) return date.toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'long', day: 'numeric' });
-    return date.toLocaleString(undefined, { weekday: 'short', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' });
-  }
-
   function repeatText(rrule) {
     if (!rrule || !rrule.FREQ) return null;
     const interval = parseInt(rrule.INTERVAL, 10) || 1;
@@ -269,7 +264,7 @@
     }
     if (badges.children.length) main.appendChild(badges);
 
-    main.addEventListener('click', () => openDetail(task));
+    main.addEventListener('click', () => openForm(task));
     li.appendChild(main);
 
     // Due date badge on the right side (before flag icon).
@@ -277,7 +272,7 @@
       const due = document.createElement('span');
       due.className = 'due-badge' + (isUrgent(task) ? ' overdue' : '');
       due.textContent = formatDueBadge(task);
-      due.addEventListener('click', (e) => { e.stopPropagation(); openDetail(task); });
+      due.addEventListener('click', (e) => { e.stopPropagation(); openForm(task); });
       li.appendChild(due);
     }
 
@@ -372,6 +367,18 @@
     pushTask(task);
   }
 
+  function markTaskComplete(task) {
+    if (!task.completed && !(task.rrule && task.rrule.FREQ && rollRecurrence(task))) {
+      task.completed = true;
+      task.status = 'COMPLETED';
+      task.completedAt = ICAL.nowStamp();
+    }
+    // Marking a task done always clears its flag (including recurring tasks,
+    // whose next occurrence starts unflagged).
+    task.flagged = false;
+    task.priorityInt = 0;
+  }
+
   function toggleComplete(task, li) {
     if (task.completed) {
       // Un-completing happens immediately (no animation).
@@ -386,15 +393,7 @@
 
     // Completing: update the model and push to the backend immediately. The
     // delay before the list re-renders is purely cosmetic.
-    if (!(task.rrule && task.rrule.FREQ && rollRecurrence(task))) {
-      task.completed = true;
-      task.status = 'COMPLETED';
-      task.completedAt = ICAL.nowStamp();
-    }
-    // Marking a task done always clears its flag (including recurring tasks,
-    // whose next occurrence starts unflagged).
-    task.flagged = false;
-    task.priorityInt = 0;
+    markTaskComplete(task);
     pushTask(task);
 
     if (li && li.isConnected) animateComplete(li);
@@ -458,45 +457,6 @@
     return true;
   }
 
-  // ---- Detail view -----------------------------------------------------
-  let detailTask = null;
-  function openDetail(task) {
-    detailTask = task;
-    const body = $('detailBody');
-    const rows = [];
-    rows.push('<div class="detail-heading' + (task.completed ? ' done' : '') + '">' +
-      '<button id="detailCheck" class="check" title="' +
-      (task.completed ? 'Mark not done' : 'Mark done') + '">' + SVG.check + '</button>' +
-      '<div class="detail-title"></div></div>');
-
-    rows.push(row('Flag',
-      '<button id="detailFlagBtn" class="flag-toggle" data-flagged="' + (task.flagged ? 'true' : 'false') + '">' +
-      SVG.flag + '<span class="flag-label">' + (task.flagged ? 'Flagged' : 'Not flagged') + '</span></button>', true));
-
-    if (task.due) {
-      rows.push(row('Due', '<span class="value ' + (isUrgent(task) ? 'overdue' : '') + '">' +
-        escapeHtml(formatFullDate(task.due, task.dueDateOnly)) + '</span>', true));
-    }
-    const rep = repeatText(task.rrule);
-    if (rep) rows.push(row('Repeat', escapeHtml(rep)));
-    if (task.description) rows.push(row('Details', escapeHtml(task.description)));
-
-    const colName = task._collectionName || collectionName(task._collectionURL);
-    if (colName) rows.push(row('List', escapeHtml(colName)));
-    if (task.completed) rows.push(row('Status', 'Completed'));
-
-    body.innerHTML = rows.join('');
-    body.querySelector('.detail-title').textContent = task.summary || '(No title)';
-    const dc = $('detailCheck');
-    if (dc) dc.addEventListener('click', () => { toggleComplete(task); openDetail(task); });
-    const fb = $('detailFlagBtn');
-    if (fb) fb.addEventListener('click', () => { toggleFlag(task); openDetail(task); });
-    show('detailModal');
-  }
-  function row(label, valueHtml, raw) {
-    const val = raw ? valueHtml : '<span class="value">' + valueHtml + '</span>';
-    return '<div class="detail-row"><span class="label">' + label + '</span>' + val + '</div>';
-  }
   function collectionName(url) {
     const c = state.collections.find((x) => x.url === url);
     return c ? c.displayName : '';
@@ -518,6 +478,8 @@
   function openForm(task) {
     editingTask = task || null;
     $('formTitle').textContent = task ? 'Edit task' : 'Add a task';
+    $('deleteTaskBtn').classList.toggle('hidden', !task);
+    $('completeTaskBtn').classList.toggle('hidden', !task);
     hideEl('formError');
 
     // Populate list dropdown
@@ -831,7 +793,7 @@
     });
   }
 
-  async function saveForm() {
+  async function saveForm(markComplete) {
     const title = $('fTitle').value.trim();
     if (!title) { showFormError('Please enter a title.'); return; }
     const colURL = $('fList').value;
@@ -877,6 +839,7 @@
     task.description = $('fDesc').value.trim();
     task.rrule = rrule;
     task.alarms = reminderAlarms;
+    if (markComplete) markTaskComplete(task);
 
     state.lastUsedCollection = colURL;
     saveUIState();
@@ -919,7 +882,7 @@
   }
 
   async function deleteTask(task) {
-    hide('detailModal');
+    hide('formModal');
     setSync('syncing');
     try {
       await state.client.deleteTodo(task.href, task.etag);
@@ -1132,9 +1095,6 @@
   }
   function hideBanner() { $('statusBanner').classList.add('hidden'); }
   function showFormError(msg) { const e = $('formError'); e.textContent = msg; e.classList.remove('hidden'); }
-  function escapeHtml(s) {
-    return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  }
 
   // Confirm dialog (promise-based)
   function confirmDialog(title, msg, okLabel) {
@@ -1242,20 +1202,15 @@
 
     $('deleteAllCompletedBtn').addEventListener('click', deleteAllCompleted);
 
-    // Detail actions
-    $('editTaskBtn').addEventListener('click', () => {
-      if (!detailTask) return;
-      hide('detailModal');
-      openForm(detailTask);
-    });
-    $('deleteTaskBtn').addEventListener('click', async () => {
-      if (!detailTask) return;
-      const ok = await confirmDialog('Delete task?', 'This can’t be undone.', 'Delete');
-      if (ok) deleteTask(detailTask);
-    });
-
     // Form
-    $('saveTaskBtn').addEventListener('click', saveForm);
+    $('deleteTaskBtn').addEventListener('click', async () => {
+      if (!editingTask) return;
+      const task = editingTask;
+      const ok = await confirmDialog('Delete task?', 'This can’t be undone.', 'Delete');
+      if (ok) deleteTask(task);
+    });
+    $('completeTaskBtn').addEventListener('click', () => saveForm(true));
+    $('saveTaskBtn').addEventListener('click', () => saveForm(false));
     $('addReminderBtn').addEventListener('click', addReminder);
     $('fFlag').addEventListener('click', () => setFormFlag(!formFlagged));
     $('fDue').addEventListener('change', handleDueDateSet);

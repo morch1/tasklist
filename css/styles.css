@@ -15,6 +15,7 @@
   --overdue: #d93025;
   --syncing: #f9ab00;
   --success: #34a853;
+  --success-hover: #2d9249;
   --flag: #d93025;
   --error-bg: #fce8e6;
   --info-bg: #e8f0fe;
@@ -47,6 +48,7 @@
     --overdue: #f28b82;
     --syncing: #fdd663;
     --success: #81c995;
+    --success-hover: #a8dab5;
     --flag: #f28b82;
     --error-bg: #442726;
     --info-bg: #253653;
@@ -421,8 +423,16 @@ body.sidebar-collapsed .main { margin-left: 0; }
   font-size: 14px; font-weight: 500;
 }
 .filled-btn:hover { background: var(--primary-hover); }
+.filled-btn.success { background: var(--success); color: var(--on-complete); }
+.filled-btn.success:hover { background: var(--success-hover); }
 .filled-btn.danger { background: var(--danger); color: var(--on-danger); }
 .filled-btn:disabled { background: var(--border); color: var(--text-secondary); }
+
+@media (max-width: 420px) {
+  .modal-actions { gap: 4px; padding-left: 8px; padding-right: 8px; }
+  .modal-actions .text-btn,
+  .modal-actions .filled-btn { padding-left: 12px; padding-right: 12px; }
+}
 
 /* ---- Form fields ---- */
 .field { display: block; margin-bottom: 18px; }
@@ -465,7 +475,7 @@ body.sidebar-collapsed .main { margin-left: 0; }
   padding: 10px 12px; border-radius: 8px; font-size: 13px; margin-top: 8px;
 }
 
-/* Flag toggle (form + detail view) */
+/* Flag toggle */
 .flag-toggle {
   display: inline-flex; align-items: center; gap: 8px;
   border: 1px solid var(--border);
@@ -524,19 +534,6 @@ body.sidebar-collapsed .main { margin-left: 0; }
   color: var(--text); font-size: 14px;
 }
 .reminder-add { margin-top: 6px; padding-left: 8px; }
-
-/* Detail view */
-.detail-heading { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
-.detail-heading .check { margin-top: 4px; }
-.detail-heading .detail-title { margin: 0; flex: 1; }
-.detail-heading.done .check { background: var(--text-secondary); border-color: var(--text-secondary); }
-.detail-heading.done .check svg { opacity: 1; }
-.detail-heading.done .detail-title { text-decoration: line-through; color: var(--text-secondary); }
-.detail-title { font-size: 20px; font-weight: 500; margin: 4px 0 16px; word-break: break-word; }
-.detail-row { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
-.detail-row .label { width: 96px; flex: none; color: var(--text-secondary); font-size: 13px; }
-.detail-row .value { flex: 1; font-size: 14px; word-break: break-word; white-space: pre-wrap; }
-.detail-row .value.overdue { color: var(--overdue); }
 
 /* Sidebar open scrim on mobile */
 @media (max-width: 839px) {
