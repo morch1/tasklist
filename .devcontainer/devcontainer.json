@@ -2,6 +2,9 @@
   "name": "${localWorkspaceFolderBasename} - pi-box devcontainer",
   "dockerComposeFile": "compose.yaml",
   "service": "devcontainer",
+  "containerUser": "dev",
+  "remoteUser": "dev",
+  "updateRemoteUserUID": true,
   "workspaceFolder": "/workspace/${localWorkspaceFolderBasename}_devcontainer",
-  "postCreateCommand": "[ -f requirements.txt ] && python -m pip install -r requirements.txt || :"
+  "postCreateCommand": "chmod +x ./.devcontainer/post-create.sh && ./.devcontainer/post-create.sh"
 }

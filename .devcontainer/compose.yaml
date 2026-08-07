@@ -1,18 +1,7 @@
-services:
-  devcontainer:
-    image: morchv/pi-box:latest
-    environment:
-      - TERM
-      - LOCAL_LLM_API_KEY
-      - FIRECRAWL_API_KEY
-      - FIRECRAWL_API_URL
-    command: sleep infinity
-    working_dir: /workspace/${COMPOSE_PROJECT_NAME}
-    volumes:
-      - ..:/workspace/${COMPOSE_PROJECT_NAME}
-      - ${DEVCONTAINER_HOME:-${HOME}/.devcontainers-home}:/home/dev
-      - /home/dev/.vscode-server
+include:
+  - compose.base.yaml
 
+services:
   dev-nginx:
     image: nginx:1.27-alpine
     environment:
