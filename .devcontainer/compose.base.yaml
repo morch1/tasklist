@@ -1,13 +1,12 @@
 services:
   devcontainer:
-    image: morchv/pi-box:latest
-    environment:
-      - LOCAL_LLM_API_KEY
-      - FIRECRAWL_API_KEY
-      - FIRECRAWL_API_URL
+    image: ${PI_BOX_IMAGE:-morchv/pi-box:latest}
+    env_file:
+      - path: ${PI_BOX_ENV_FILE:-${PI_BOX_ROOT:-${HOME}/.pi-box}/pi-box.env}
+        required: false
     command: sleep infinity
     working_dir: /workspace/${COMPOSE_PROJECT_NAME}
     volumes:
       - ..:/workspace/${COMPOSE_PROJECT_NAME}
-      - ${PI_BOX_HOME:-${HOME}/.pi-box-home}:/home/dev
+      - ${PI_BOX_HOME:-${PI_BOX_ROOT:-${HOME}/.pi-box}/home}:/home/dev
       - /home/dev/.vscode-server
