@@ -505,8 +505,10 @@
       loadDueForm(null);
       loadReminderForm(null);
       $('fDesc').value = '';
-      // Default to the first selected list; if none selected, the last-used list.
-      const preferred = (state.selectedLists[0] || state.lastUsedCollection);
+      // Use the sole selected list; otherwise default to the last-used list.
+      const preferred = state.selectedLists.length === 1
+        ? state.selectedLists[0]
+        : state.lastUsedCollection;
       sel.value = preferred || (state.collections[0] && state.collections[0].url);
       loadRepeatForm(null);
     }
