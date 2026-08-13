@@ -100,14 +100,6 @@ Custom IP/port (remember to publish the same container port):
 docker run -d --name tasklist -e BIND_IP=0.0.0.0 -e PORT=9000 -p 9000:9000 tasklist
 ```
 
-Or with Compose (reads `BIND_IP`/`PORT` from the shell or a `.env` file and
-maps the port automatically):
-
-```sh
-docker compose up -d --build          # defaults: 0.0.0.0:8234
-PORT=9000 docker compose up -d --build # custom port
-```
-
 ## ⚠️ CORS — read this if the connection fails
 
 Browsers enforce the same-origin policy on `fetch()`. Because this app is

@@ -1,12 +1,16 @@
 services:
   devcontainer:
     image: ${PI_BOX_IMAGE:-morchv/pi-box:latest}
+    container_name: ${COMPOSE_PROJECT_NAME}-devcontainer
+    hostname: pi-box
     env_file:
-      - path: ${PI_BOX_ENV_FILE:-${PI_BOX_ROOT:-${HOME}/.pi-box}/pi-box.env}
+      - path: ${PI_BOX_ENV_FILE:-${PI_BOX_ROOT:-~/.pi-box}/pi-box.env}
         required: false
-    command: sleep infinity
-    working_dir: /workspace/${COMPOSE_PROJECT_NAME}
+    working_dir: /workspace/${WORKSPACE}
     volumes:
-      - ..:/workspace/${COMPOSE_PROJECT_NAME}
-      - ${PI_BOX_HOME:-${PI_BOX_ROOT:-${HOME}/.pi-box}/home}:/home/dev
-      - /home/dev/.vscode-server
+      - "..:/workspace/${WORKSPACE}:z"
+      - "${PI_BOX_ROOT:-~/.pi-box}/home:/home/pi:z"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
